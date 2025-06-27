@@ -125,9 +125,9 @@ class _AppRootState extends State<AppRoot> {
   }
 
   Future<void> _checkAuth() async {
-    final isAuthenticated = _authService.isAuthenticated;
+    await _authService.refreshToken();
     setState(() {
-      _isAuthenticated = isAuthenticated;
+      _isAuthenticated = _authService.isAuthenticated;
       _isLoading = false;
     });
   }
