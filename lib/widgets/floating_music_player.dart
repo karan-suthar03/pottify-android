@@ -1,29 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/song.dart';
+import '../services/music_player_service.dart';
 
 class FloatingMusicPlayer extends StatefulWidget {
   final bool isVisible;
   final VoidCallback? onTap;
-  final VoidCallback? onPlayPause;
-  final VoidCallback? onNext;
-  final VoidCallback? onPrevious;
-  final Song? currentSong;
-  final bool isPlaying;
-  final double progress;
-  final bool isLoading;
 
   const FloatingMusicPlayer({
     super.key,
     this.isVisible = true,
     this.onTap,
-    this.onPlayPause,
-    this.onNext,
-    this.onPrevious,
-    this.currentSong,
-    this.isPlaying = false,
-    this.progress = 0.0,
-    this.isLoading = false,
   });
 
   @override
@@ -31,28 +18,23 @@ class FloatingMusicPlayer extends StatefulWidget {
 }
 
 class _FloatingMusicPlayerState extends State<FloatingMusicPlayer>
-    with TickerProviderStateMixin {  late AnimationController _slideController;
+    with TickerProviderStateMixin {
+  late AnimationController _slideController;
   late AnimationController _playButtonController;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _playButtonAnimation;
-  
-  Song? get _currentSong => widget.currentSong;
-  bool get _isPlaying => widget.isPlaying;
-  double get _progress => widget.progress;
 
   @override
   void initState() {
     super.initState();
-    
     _slideController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-      _playButtonController = AnimationController(
+    _playButtonController = AnimationController(
       duration: const Duration(milliseconds: 200),
       vsync: this,
     );
-    
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 1),
       end: Offset.zero,
@@ -60,14 +42,13 @@ class _FloatingMusicPlayerState extends State<FloatingMusicPlayer>
       parent: _slideController,
       curve: Curves.easeOutCubic,
     ));
-    
     _playButtonAnimation = Tween<double>(
       begin: 1.0,
       end: 0.8,
     ).animate(CurvedAnimation(
-      parent: _playButtonController,      curve: Curves.easeInOut,
+      parent: _playButtonController,
+      curve: Curves.easeInOut,
     ));
-    
     if (widget.isVisible) {
       _slideController.forward();
     }
@@ -83,7 +64,9 @@ class _FloatingMusicPlayerState extends State<FloatingMusicPlayer>
         _slideController.reverse();
       }
     }
-  }  @override
+  }
+
+  @override
   void dispose() {
     _slideController.dispose();
     _playButtonController.dispose();
@@ -91,35 +74,30 @@ class _FloatingMusicPlayerState extends State<FloatingMusicPlayer>
   }
 
   void _onPrevious() {
-    widget.onPrevious?.call();
+    MusicPlayerService().previous();
     HapticFeedback.lightImpact();
   }
 
   void _onNext() {
-    widget.onNext?.call();
+    MusicPlayerService().next();
     HapticFeedback.lightImpact();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!widget.isVisible) return const SizedBox.shrink();
-    if (_currentSong == null) {
-      return const Center(
-        child: Text(
-          'Not playing',
-          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
-        ),
-      );
-    }
-    final imageUrl = _currentSong?.imageUrl;
+    final musicPlayer = MusicPlayerService();
+    final song = musicPlayer.currentSong;
+    if (!widget.isVisible || song == null) return const SizedBox.shrink();
+    final imageUrl = song.imageUrl;
     return SlideTransition(
       position: _slideAnimation,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        decoration: BoxDecoration(          gradient: LinearGradient(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
             colors: [
-              Colors.deepPurple.withValues(alpha: 0.9),
-              Colors.purple.withValues(alpha: 0.9),
+              Colors.deepPurple.withOpacity(0.9),
+              Colors.purple.withOpacity(0.9),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -161,7 +139,7 @@ class _FloatingMusicPlayerState extends State<FloatingMusicPlayer>
                           overlayShape: SliderComponentShape.noOverlay,
                         ),
                         child: Slider(
-                          value: _progress,
+                          value: musicPlayer.progress,
                           onChanged: (v) {},
                           activeColor: Colors.white.withOpacity(0.9),
                           inactiveColor: Colors.white.withOpacity(0.2),
@@ -169,7 +147,6 @@ class _FloatingMusicPlayerState extends State<FloatingMusicPlayer>
                       ),
                     ),
                   ),
-                  
                   // Main player content
                   Row(
                     children: [
@@ -210,16 +187,14 @@ class _FloatingMusicPlayerState extends State<FloatingMusicPlayer>
                                 ),
                         ),
                       ),
-                      
                       const SizedBox(width: 12),
-                      
                       // Song info
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              _currentSong!.title,
+                              song.title,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,
@@ -230,7 +205,7 @@ class _FloatingMusicPlayerState extends State<FloatingMusicPlayer>
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              _currentSong!.artist,
+                              song.artist,
                               style: TextStyle(
                                 color: Colors.white.withOpacity(0.8),
                                 fontSize: 14,
@@ -242,13 +217,11 @@ class _FloatingMusicPlayerState extends State<FloatingMusicPlayer>
                           ],
                         ),
                       ),
-                      
                       const SizedBox(width: 12),
-                      
                       // Control buttons
                       Row(
                         mainAxisSize: MainAxisSize.min,
-                        children: [                          // Previous button
+                        children: [
                           IconButton(
                             onPressed: _onPrevious,
                             icon: Icon(
@@ -262,8 +235,6 @@ class _FloatingMusicPlayerState extends State<FloatingMusicPlayer>
                               minHeight: 36,
                             ),
                           ),
-                          
-                          // Play/Pause or Loading button
                           ScaleTransition(
                             scale: _playButtonAnimation,
                             child: Container(
@@ -279,8 +250,12 @@ class _FloatingMusicPlayerState extends State<FloatingMusicPlayer>
                                 ],
                               ),
                               child: IconButton(
-                                onPressed: widget.isLoading ? null : widget.onPlayPause,
-                                icon: widget.isLoading
+                                onPressed: musicPlayer.isLoading
+                                    ? null
+                                    : musicPlayer.isPlaying
+                                        ? musicPlayer.pause
+                                        : musicPlayer.play,
+                                icon: musicPlayer.isLoading
                                     ? const SizedBox(
                                         width: 24,
                                         height: 24,
@@ -288,7 +263,7 @@ class _FloatingMusicPlayerState extends State<FloatingMusicPlayer>
                                       )
                                     : AnimatedSwitcher(
                                         duration: const Duration(milliseconds: 200),
-                                        child: _isPlaying
+                                        child: musicPlayer.isPlaying
                                             ? Icon(
                                                 Icons.pause_rounded,
                                                 key: const ValueKey('pause'),
@@ -310,7 +285,6 @@ class _FloatingMusicPlayerState extends State<FloatingMusicPlayer>
                               ),
                             ),
                           ),
-                            // Next button
                           IconButton(
                             onPressed: _onNext,
                             icon: Icon(

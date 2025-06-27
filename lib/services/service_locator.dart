@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'api_service.dart';
 import 'auth_service.dart';
+import 'music_player_ui_service.dart';
+import 'music_player_service.dart';
 
 /// A simple service locator for managing app-wide services.
 class ServiceLocator {
@@ -23,6 +25,12 @@ class ServiceLocator {
       final authService = AuthService();
       await authService.initialize();
       _services[AuthService] = authService;
+
+      final musicPlayerUIService = MusicPlayerUIService();
+      _services[MusicPlayerUIService] = musicPlayerUIService;
+
+      final musicPlayerService = MusicPlayerService();
+      _services[MusicPlayerService] = musicPlayerService;
 
       if (kDebugMode) print('Services initialized successfully');
       _initialized = true;

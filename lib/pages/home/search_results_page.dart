@@ -1,3 +1,5 @@
+import 'package:app/services/music_player_service.dart';
+import 'package:app/services/service_locator.dart';
 import 'package:flutter/material.dart';
 import '../../models/song.dart';
 
@@ -39,7 +41,7 @@ class _SearchResultsState extends State<SearchResults> {
   }
 
   Future<void> _handleTap(Song song) async {
-
+    serviceLocator.get<MusicPlayerService>()?.setSong(song);
   }
 
   @override

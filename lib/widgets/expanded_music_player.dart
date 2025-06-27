@@ -1,29 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/song.dart';
+import '../services/music_player_service.dart';
+import '../services/music_player_ui_service.dart';
 
 class ExpandedMusicPlayer extends StatefulWidget {
-  final Song currentSong;
-  final List<Song> queue;
-  final bool isPlaying;
-  final bool isLoading;
-  final double progress;
-  final VoidCallback? onPlayPause;
-  final VoidCallback? onNext;
-  final VoidCallback? onPrevious;
-  final Function(double)? onSeek;
+  final VoidCallback? onClose;
 
   const ExpandedMusicPlayer({
     super.key,
-    required this.currentSong,
-    required this.queue,
-    this.isPlaying = false,
-    this.isLoading = false,
-    this.progress = 0.0,
-    this.onPlayPause,
-    this.onNext,
-    this.onPrevious,
-    this.onSeek,
+    this.onClose,
   });
 
   @override
@@ -42,22 +28,18 @@ class _ExpandedMusicPlayerState extends State<ExpandedMusicPlayer>
   @override
   void initState() {
     super.initState();
-    
     _slideController = AnimationController(
       duration: const Duration(milliseconds: 400),
       vsync: this,
     );
-    
     _albumController = AnimationController(
       duration: const Duration(seconds: 20),
       vsync: this,
     );
-    
     _slideAnimation = CurvedAnimation(
       parent: _slideController,
       curve: Curves.easeOutCubic,
     );
-    
     _albumAnimation = Tween<double>(
       begin: 0,
       end: 1,
@@ -65,21 +47,24 @@ class _ExpandedMusicPlayerState extends State<ExpandedMusicPlayer>
       parent: _albumController,
       curve: Curves.linear,
     ));
-    
     _slideController.forward();
-    
-    if (widget.isPlaying && !widget.isLoading) {
+    final musicPlayer = MusicPlayerService();
+    if (musicPlayer.isPlaying && !musicPlayer.isLoading) {
       _albumController.repeat();
     }
+    // Listen to state changes
+    MusicPlayerService().addListener(_handleMusicPlayerStateChange);
+    MusicPlayerUIService().addListener(_handleMusicPlayerStateChange);
   }
 
-  @override
-  void didUpdateWidget(ExpandedMusicPlayer oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.isPlaying != oldWidget.isPlaying || widget.isLoading != oldWidget.isLoading) {
-      if (widget.isPlaying && !widget.isLoading) {
+  void _handleMusicPlayerStateChange() {
+    final musicPlayer = MusicPlayerService();
+    if (musicPlayer.isPlaying && !musicPlayer.isLoading) {
+      if (!_albumController.isAnimating) {
         _albumController.repeat();
-      } else {
+      }
+    } else {
+      if (_albumController.isAnimating) {
         _albumController.stop();
       }
     }
@@ -89,8 +74,17 @@ class _ExpandedMusicPlayerState extends State<ExpandedMusicPlayer>
   void dispose() {
     _slideController.dispose();
     _albumController.dispose();
+    MusicPlayerService().removeListener(_handleMusicPlayerStateChange);
+    MusicPlayerUIService().removeListener(_handleMusicPlayerStateChange);
     super.dispose();
   }
+
+  @override
+  void didUpdateWidget(ExpandedMusicPlayer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // No need to handle album animation here anymore
+  }
+
   void _toggleView(int view) {
     setState(() {
       _currentView = view;
@@ -107,104 +101,112 @@ class _ExpandedMusicPlayerState extends State<ExpandedMusicPlayer>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.deepPurple.shade900,
-              Colors.purple.shade800,
-              Colors.deepPurple.shade900,
-            ],
-          ),
-        ),
-        child: SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, 1),
-            end: Offset.zero,
-          ).animate(_slideAnimation),
-          child: Column(
-            children: [
-              // Top bar
-              SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          color: Colors.white,
-                          size: 32,
-                        ),
-                      ),
-                      Column(
+    return AnimatedBuilder(
+      animation: Listenable.merge([
+        MusicPlayerService(),
+        MusicPlayerUIService(),
+      ]),
+      builder: (context, _) {
+        final musicPlayer = MusicPlayerService();
+        final song = musicPlayer.currentSong;
+        if (song == null) return const SizedBox.shrink();
+        return Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.deepPurple.shade900,
+                  Colors.purple.shade800,
+                  Colors.deepPurple.shade900,
+                ],
+              ),
+            ),
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 1),
+                end: Offset.zero,
+              ).animate(_slideAnimation),
+              child: Column(
+                children: [
+                  // Top bar
+                  SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            'PLAYING FROM LIBRARY',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.7),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              letterSpacing: 1,
+                          IconButton(
+                            onPressed: widget.onClose ?? () => Navigator.of(context).maybePop(),
+                            icon: const Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              color: Colors.white,
+                              size: 32,
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Liked Songs',
-                            style: const TextStyle(
+                          Column(
+                            children: [
+                              Text(
+                                'PLAYING FROM LIBRARY',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.7),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Liked Songs',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                          IconButton(
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                            },
+                            icon: const Icon(
+                              Icons.more_vert_rounded,
                               color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
+                              size: 28,
                             ),
                           ),
                         ],
                       ),
-                      IconButton(
-                        onPressed: () {
-                          HapticFeedback.lightImpact();
-                        },
-                        icon: const Icon(
-                          Icons.more_vert_rounded,
-                          color: Colors.white,
-                          size: 28,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+                  // Main content
+                  Expanded(
+                    child: _currentView == 0
+                        ? _buildPlayerView(song, musicPlayer)
+                        : _currentView == 1
+                            ? _buildQueueView(musicPlayer)
+                            : _buildLyricsView(),
+                  ),
+                  // Bottom controls
+                  _buildBottomControls(),
+                ],
               ),
-              
-              // Main content
-              Expanded(
-                child: _currentView == 0 
-                    ? _buildPlayerView()
-                    : _currentView == 1
-                        ? _buildQueueView()
-                        : _buildLyricsView(),
-              ),
-              
-              // Bottom controls
-              _buildBottomControls(),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildPlayerView() {
+  Widget _buildPlayerView(Song song, MusicPlayerService musicPlayer) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(
         children: [
           const Spacer(flex: 1),
-          
           // Album art with loading state
           GestureDetector(
             onTap: () => _toggleView(2),
@@ -228,9 +230,9 @@ class _ExpandedMusicPlayerState extends State<ExpandedMusicPlayer>
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(20),
-                      child: widget.currentSong.imageUrl != null && widget.currentSong.imageUrl!.isNotEmpty
+                      child: song.imageUrl != null && song.imageUrl!.isNotEmpty
                           ? Image.network(
-                              widget.currentSong.imageUrl!,
+                              song.imageUrl!,
                               fit: BoxFit.cover,
                               loadingBuilder: (context, child, loadingProgress) {
                                 if (loadingProgress == null) {
@@ -292,7 +294,7 @@ class _ExpandedMusicPlayerState extends State<ExpandedMusicPlayer>
                     ),
                   ),
                 ),
-                if (widget.isLoading && !_isImageLoading)
+                if (musicPlayer.isLoading && !_isImageLoading)
                   Container(
                     width: 280,
                     height: 280,
@@ -310,12 +312,10 @@ class _ExpandedMusicPlayerState extends State<ExpandedMusicPlayer>
               ],
             ),
           ),
-          
           const Spacer(flex: 1),
-          
           // Song info
           Text(
-            widget.currentSong.title,
+            song.title,
             style: const TextStyle(
               color: Colors.white,
               fontSize: 24,
@@ -327,32 +327,30 @@ class _ExpandedMusicPlayerState extends State<ExpandedMusicPlayer>
           ),
           const SizedBox(height: 8),
           Text(
-            widget.currentSong.artist,
+            song.artist,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.8),
+              color: Colors.white.withOpacity(0.8),
               fontSize: 18,
               fontWeight: FontWeight.w500,
             ),
             textAlign: TextAlign.center,
           ),
-          
           const SizedBox(height: 40),
-          
           // Progress slider
           Column(
             children: [
               SliderTheme(
                 data: SliderTheme.of(context).copyWith(
                   activeTrackColor: Colors.white,
-                  inactiveTrackColor: Colors.white.withValues(alpha: 0.3),
+                  inactiveTrackColor: Colors.white.withOpacity(0.3),
                   thumbColor: Colors.white,
                   thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
                   overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
                   trackHeight: 3,
                 ),
                 child: Slider(
-                  value: widget.progress,
-                  onChanged: widget.onSeek,
+                  value: musicPlayer.progress,
+                  onChanged: musicPlayer.seek,
                   onChangeStart: (_) => HapticFeedback.lightImpact(),
                 ),
               ),
@@ -363,17 +361,17 @@ class _ExpandedMusicPlayerState extends State<ExpandedMusicPlayer>
                   children: [
                     Text(
                       _formatDuration(Duration(
-                        milliseconds: (widget.progress * widget.currentSong.duration.inMilliseconds).round(),
+                        milliseconds: (musicPlayer.progress * song.duration.inMilliseconds).round(),
                       )),
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.7),
+                        color: Colors.white.withOpacity(0.7),
                         fontSize: 12,
                       ),
                     ),
                     Text(
-                      _formatDuration(widget.currentSong.duration),
+                      _formatDuration(song.duration),
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.7),
+                        color: Colors.white.withOpacity(0.7),
                         fontSize: 12,
                       ),
                     ),
@@ -382,28 +380,19 @@ class _ExpandedMusicPlayerState extends State<ExpandedMusicPlayer>
               ),
             ],
           ),
-          
           const SizedBox(height: 20),
-          
           // Control buttons
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               IconButton(
                 onPressed: () {
+                  musicPlayer.previous();
                   HapticFeedback.lightImpact();
                 },
                 icon: const Icon(
-                  Icons.shuffle_rounded,
-                  color: Colors.white,
-                  size: 28,
-                ),
-              ),
-              IconButton(
-                onPressed: widget.isLoading ? null : widget.onPrevious,
-                icon: Icon(
                   Icons.skip_previous_rounded,
-                  color: widget.isLoading ? Colors.white.withOpacity(0.5) : Colors.white,
+                  color: Colors.white,
                   size: 40,
                 ),
               ),
@@ -422,11 +411,12 @@ class _ExpandedMusicPlayerState extends State<ExpandedMusicPlayer>
                   ],
                 ),
                 child: IconButton(
-                  onPressed: widget.isLoading ? null : () {
-                    widget.onPlayPause?.call();
-                    HapticFeedback.lightImpact();
-                  },
-                  icon: widget.isLoading
+                  onPressed: musicPlayer.isLoading
+                      ? null
+                      : musicPlayer.isPlaying
+                          ? musicPlayer.pause
+                          : musicPlayer.play,
+                  icon: musicPlayer.isLoading
                       ? const SizedBox(
                           width: 36,
                           height: 36,
@@ -436,7 +426,7 @@ class _ExpandedMusicPlayerState extends State<ExpandedMusicPlayer>
                           ),
                         )
                       : Icon(
-                          widget.isPlaying
+                          musicPlayer.isPlaying
                               ? Icons.pause_rounded
                               : Icons.play_arrow_rounded,
                           color: Colors.deepPurple,
@@ -445,33 +435,25 @@ class _ExpandedMusicPlayerState extends State<ExpandedMusicPlayer>
                 ),
               ),
               IconButton(
-                onPressed: widget.isLoading ? null : widget.onNext,
-                icon: Icon(
-                  Icons.skip_next_rounded,
-                  color: widget.isLoading ? Colors.white.withOpacity(0.5) : Colors.white,
-                  size: 40,
-                ),
-              ),
-              IconButton(
                 onPressed: () {
+                  musicPlayer.next();
                   HapticFeedback.lightImpact();
                 },
                 icon: const Icon(
-                  Icons.repeat_rounded,
+                  Icons.skip_next_rounded,
                   color: Colors.white,
-                  size: 28,
+                  size: 40,
                 ),
               ),
             ],
           ),
-          
           const Spacer(flex: 1),
         ],
       ),
     );
   }
 
-  Widget _buildQueueView() {
+  Widget _buildQueueView(MusicPlayerService musicPlayer) {
     return Column(
       children: [
         Padding(
@@ -487,31 +469,30 @@ class _ExpandedMusicPlayerState extends State<ExpandedMusicPlayer>
         ),
         Expanded(
           child: ListView.builder(
-            itemCount: widget.queue.length,
+            itemCount: musicPlayer.queue.length,
             itemBuilder: (context, index) {
-              final song = widget.queue[index];
-              final isCurrentSong = song.title == widget.currentSong.title;
-              
+              final song = musicPlayer.queue[index];
+              final isCurrentSong = song.title == musicPlayer.currentSong?.title;
               return ListTile(
                 leading: Container(
                   width: 50,
                   height: 50,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
-                    color: isCurrentSong 
-                        ? Colors.white.withValues(alpha: 0.2)
-                        : Colors.white.withValues(alpha: 0.1),
+                    color: isCurrentSong
+                        ? Colors.white.withOpacity(0.2)
+                        : Colors.white.withOpacity(0.1),
                   ),
                   child: Icon(
                     Icons.music_note_rounded,
-                    color: isCurrentSong ? Colors.white : Colors.white.withValues(alpha: 0.7),
+                    color: isCurrentSong ? Colors.white : Colors.white.withOpacity(0.7),
                     size: 24,
                   ),
                 ),
                 title: Text(
                   song.title,
                   style: TextStyle(
-                    color: isCurrentSong ? Colors.white : Colors.white.withValues(alpha: 0.9),
+                    color: isCurrentSong ? Colors.white : Colors.white.withOpacity(0.9),
                     fontSize: 16,
                     fontWeight: isCurrentSong ? FontWeight.w600 : FontWeight.w400,
                   ),
@@ -519,20 +500,20 @@ class _ExpandedMusicPlayerState extends State<ExpandedMusicPlayer>
                 subtitle: Text(
                   song.artist,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7),
+                    color: Colors.white.withOpacity(0.7),
                     fontSize: 14,
                   ),
                 ),
                 trailing: isCurrentSong
                     ? Icon(
-                        widget.isPlaying ? Icons.volume_up_rounded : Icons.pause_rounded,
+                        musicPlayer.isPlaying ? Icons.volume_up_rounded : Icons.pause_rounded,
                         color: Colors.white,
                         size: 24,
                       )
                     : null,
                 onTap: () {
                   HapticFeedback.lightImpact();
-                  // TODO: Switch to selected song
+                  musicPlayer.setSong(song);
                 },
               );
             },
@@ -569,56 +550,25 @@ class _ExpandedMusicPlayerState extends State<ExpandedMusicPlayer>
       "So long, I've been running on empty",
       "Running on, running on empty",
     ];
-
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              IconButton(
-                onPressed: () => _toggleView(0),
-                icon: const Icon(
-                  Icons.arrow_back_rounded,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Lyrics',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: lyrics.map((line) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Text(
-                    line,
-                    style: TextStyle(
-                      color: line.isEmpty ? Colors.transparent : Colors.white.withValues(alpha: 0.9),
-                      fontSize: 18,
-                      fontWeight: FontWeight.w400,
-                      height: 1.5,
-                    ),
-                  ),
-                );
-              }).toList(),
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+      itemCount: lyrics.length,
+      itemBuilder: (context, index) {
+        final line = lyrics[index];
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Text(
+            line,
+            style: TextStyle(
+              color: line.isEmpty ? Colors.transparent : Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+              height: 1.5,
             ),
+            textAlign: TextAlign.center,
           ),
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -632,7 +582,7 @@ class _ExpandedMusicPlayerState extends State<ExpandedMusicPlayer>
             onPressed: () => _toggleView(0),
             icon: Icon(
               Icons.music_note_rounded,
-              color: _currentView == 0 ? Colors.white : Colors.white.withValues(alpha: 0.5),
+              color: _currentView == 0 ? Colors.white : Colors.white.withOpacity(0.5),
               size: 28,
             ),
           ),
@@ -640,7 +590,7 @@ class _ExpandedMusicPlayerState extends State<ExpandedMusicPlayer>
             onPressed: () => _toggleView(1),
             icon: Icon(
               Icons.queue_music_rounded,
-              color: _currentView == 1 ? Colors.white : Colors.white.withValues(alpha: 0.5),
+              color: _currentView == 1 ? Colors.white : Colors.white.withOpacity(0.5),
               size: 28,
             ),
           ),
@@ -650,7 +600,7 @@ class _ExpandedMusicPlayerState extends State<ExpandedMusicPlayer>
             },
             icon: Icon(
               Icons.devices_rounded,
-              color: Colors.white.withValues(alpha: 0.5),
+              color: Colors.white.withOpacity(0.5),
               size: 28,
             ),
           ),
@@ -660,7 +610,7 @@ class _ExpandedMusicPlayerState extends State<ExpandedMusicPlayer>
             },
             icon: Icon(
               Icons.share_rounded,
-              color: Colors.white.withValues(alpha: 0.5),
+              color: Colors.white.withOpacity(0.5),
               size: 28,
             ),
           ),
