@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'api_service.dart';
+import 'audio_playback_service.dart';
 import 'auth_service.dart';
 import 'music_player_ui_service.dart';
 import 'music_player_service.dart';
@@ -31,6 +32,9 @@ class ServiceLocator {
 
       final musicPlayerService = MusicPlayerService();
       _services[MusicPlayerService] = musicPlayerService;
+
+      final audioPlaybackService = AudioPlaybackService();
+      _services[AudioPlaybackService] = audioPlaybackService;
 
       if (kDebugMode) print('Services initialized successfully');
       _initialized = true;

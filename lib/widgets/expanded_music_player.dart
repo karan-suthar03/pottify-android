@@ -92,9 +92,9 @@ class _ExpandedMusicPlayerState extends State<ExpandedMusicPlayer>
     HapticFeedback.lightImpact();
   }
 
-  String _formatDuration(Duration duration) {
+  String _formatDuration(Duration? duration) {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
-    String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
+    String twoDigitMinutes = twoDigits(duration!.inMinutes.remainder(60));
     String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
     return "$twoDigitMinutes:$twoDigitSeconds";
   }
@@ -361,7 +361,7 @@ class _ExpandedMusicPlayerState extends State<ExpandedMusicPlayer>
                   children: [
                     Text(
                       _formatDuration(Duration(
-                        milliseconds: (musicPlayer.progress * song.duration.inMilliseconds).round(),
+                        milliseconds: (musicPlayer.progress * musicPlayer.duration!.inMilliseconds).round(),
                       )),
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.7),
@@ -369,7 +369,7 @@ class _ExpandedMusicPlayerState extends State<ExpandedMusicPlayer>
                       ),
                     ),
                     Text(
-                      _formatDuration(song.duration),
+                      _formatDuration(musicPlayer.duration),
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.7),
                         fontSize: 12,
