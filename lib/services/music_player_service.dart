@@ -10,21 +10,21 @@ class MusicPlayerService extends ChangeNotifier {
   factory MusicPlayerService() => _instance;
   MusicPlayerService._internal();
 
-  static final AudioPlaybackService? _audioPlayer = serviceLocator.get<AudioPlaybackService>();
+  static final AudioPlaybackService _audioPlayer = serviceLocator.get<AudioPlaybackService>()!;
 
   Song? _currentSong;
   List<Song> _queue = [];
   bool _isPlaying = false;
   bool _isLoading = true;
-  double _progress = 0.0;
-  Duration? _duration;
+  Duration _progress = Duration.zero;
+  Duration _duration = Duration.zero;
 
   Song? get currentSong => _currentSong;
   List<Song> get queue => List.unmodifiable(_queue);
   bool get isPlaying => _isPlaying;
   bool get isLoading => _isLoading;
-  double get progress => _progress;
-  Duration? get duration => _duration;
+  Duration get progress => _progress;
+  Duration get duration => _duration;
 
   void setSong(Song song) {
     _currentSong = song;
@@ -34,25 +34,21 @@ class MusicPlayerService extends ChangeNotifier {
   }
 
   void setUpAudioPlayer(Song song) async{
-    ApiService? apiService = serviceLocator.get<ApiService>();
-    apiService?.fetchMp3Url(song.id).then((mp3Url) {
+    ApiService apiService = serviceLocator.get<ApiService>()!;
+    apiService.fetchMp3Url(song.id).then((mp3Url) {
       if (mp3Url == null) {
         setLoading(true);
       } else {
-        _audioPlayer?.load(mp3Url);
-        _audioPlayer?.stateStream.listen((state) {
-          final isLoading = state.processingState == ProcessingState.loading ||
-              state.processingState == ProcessingState.buffering;
+        _audioPlayer.load(mp3Url);
+        _audioPlayer.stateStream.listen((state) {
+          final isLoading = state.processingState == ProcessingState.loading;
           setLoading(isLoading);
         });
-        _audioPlayer?.positionStream.listen((position) {
-          final duration = this.duration;
-          if(duration != null){
-            setProgressByAudioService(position.inMilliseconds / duration.inMilliseconds);
-          }
+        _audioPlayer.positionStream.listen((position) {
+            setProgressByAudioService(position);
         });
-        _audioPlayer?.durationStream.listen((duration){
-          setDuration(duration);
+        _audioPlayer.durationStream.listen((duration){
+          setDuration(duration ?? Duration.zero);
         });
       }
     });
@@ -65,13 +61,13 @@ class MusicPlayerService extends ChangeNotifier {
 
   void play() {
     _isPlaying = true;
-    _audioPlayer?.play();
+    _audioPlayer.play();
     notifyListeners();
   }
 
   void pause() {
     _isPlaying = false;
-    _audioPlayer?.pause();
+    _audioPlayer.pause();
     notifyListeners();
   }
 
@@ -80,14 +76,14 @@ class MusicPlayerService extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setProgressByAudioService(double progress) {
+  void setProgressByAudioService(Duration progress) {
     _progress = progress;
     notifyListeners();
   }
 
-  void setProgress(double progress) {
+  void setProgress(Duration progress) {
     _progress = progress;
-    _audioPlayer?.seek(Duration(milliseconds: (progress * _duration!.inMilliseconds).toInt()));
+    _audioPlayer.seek(progress);
     notifyListeners();
   }
 
@@ -109,11 +105,11 @@ class MusicPlayerService extends ChangeNotifier {
     }
   }
 
-  void seek(double progress) {
+  void seek(Duration progress) {
     setProgress(progress);
   }
 
-  void setDuration(Duration? duration) {
+  void setDuration(Duration duration) {
     _duration = duration;
     notifyListeners();
   }

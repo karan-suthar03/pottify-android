@@ -139,8 +139,10 @@ class _FloatingMusicPlayerState extends State<FloatingMusicPlayer>
                           overlayShape: SliderComponentShape.noOverlay,
                         ),
                         child: Slider(
-                          value: musicPlayer.progress,
-                          onChanged: (v) {},
+                          value: musicPlayer.duration.inMilliseconds > 0 
+                              ? (musicPlayer.progress.inMilliseconds / musicPlayer.duration.inMilliseconds).clamp(0.0, 1.0)
+                              : 0.0,
+                          onChanged: (value) => musicPlayer.seek(Duration(milliseconds: (value * musicPlayer.duration.inMilliseconds).toInt())),
                           activeColor: Colors.white.withOpacity(0.9),
                           inactiveColor: Colors.white.withOpacity(0.2),
                         ),
