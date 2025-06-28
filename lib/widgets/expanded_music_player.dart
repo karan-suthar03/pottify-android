@@ -118,9 +118,9 @@ class _ExpandedMusicPlayerState extends State<ExpandedMusicPlayer>
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.deepPurple.shade900,
-                  Colors.purple.shade800,
-                  Colors.deepPurple.shade900,
+                  Theme.of(context).colorScheme.onPrimaryFixed,
+                  Theme.of(context).colorScheme.onPrimaryFixedVariant,
+                  Theme.of(context).colorScheme.onPrimaryFixed,
                 ],
               ),
             ),
@@ -417,19 +417,19 @@ class _ExpandedMusicPlayerState extends State<ExpandedMusicPlayer>
                           ? musicPlayer.pause
                           : musicPlayer.play,
                   icon: musicPlayer.isLoading
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 36,
                           height: 36,
                           child: CircularProgressIndicator(
                             strokeWidth: 3,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.deepPurple),
+                            valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.onPrimaryFixed),
                           ),
                         )
                       : Icon(
                           musicPlayer.isPlaying
                               ? Icons.pause_rounded
                               : Icons.play_arrow_rounded,
-                          color: Colors.deepPurple,
+                          color: Theme.of(context).colorScheme.onPrimaryFixed,
                           size: 36,
                         ),
                 ),

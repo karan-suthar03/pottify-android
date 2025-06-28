@@ -96,8 +96,8 @@ class _FloatingMusicPlayerState extends State<FloatingMusicPlayer>
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Colors.deepPurple.withOpacity(0.9),
-              Colors.purple.withOpacity(0.9),
+              Theme.of(context).colorScheme.onPrimaryFixed,
+              Theme.of(context).colorScheme.onPrimaryFixed.withOpacity(0.8),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -258,10 +258,12 @@ class _FloatingMusicPlayerState extends State<FloatingMusicPlayer>
                                         ? musicPlayer.pause
                                         : musicPlayer.play,
                                 icon: musicPlayer.isLoading
-                                    ? const SizedBox(
+                                    ? SizedBox(
                                         width: 24,
                                         height: 24,
-                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                        child: CircularProgressIndicator(strokeWidth: 2,
+                                          color: Theme.of(context).colorScheme.onPrimaryFixed,
+                                        ),
                                       )
                                     : AnimatedSwitcher(
                                         duration: const Duration(milliseconds: 200),
@@ -269,13 +271,13 @@ class _FloatingMusicPlayerState extends State<FloatingMusicPlayer>
                                             ? Icon(
                                                 Icons.pause_rounded,
                                                 key: const ValueKey('pause'),
-                                                color: Colors.deepPurple.shade700,
+                                                color: Theme.of(context).colorScheme.onPrimaryFixed,
                                                 size: 24,
                                               )
                                             : Icon(
                                                 Icons.play_arrow_rounded,
                                                 key: const ValueKey('play'),
-                                                color: Colors.deepPurple.shade700,
+                                                color: Theme.of(context).colorScheme.onPrimaryFixed,
                                                 size: 24,
                                               ),
                                       ),

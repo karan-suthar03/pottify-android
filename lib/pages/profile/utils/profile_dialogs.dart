@@ -7,12 +7,13 @@ import '../../login_page.dart';
 class ProfileDialogs {
   static void showFeedbackDialog(BuildContext context) {
     final TextEditingController feedbackController = TextEditingController();
+    final colorScheme = Theme.of(context).colorScheme;
     
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: const Color(0xFF2A2A2A),
+          backgroundColor: colorScheme.surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
@@ -30,7 +31,7 @@ class ProfileDialogs {
               Text(
                 'Help us improve Pottify by sharing your thoughts and suggestions.',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.8),
+                  color: colorScheme.onSurface.withOpacity(0.8),
                   fontSize: 14,
                 ),
               ),
@@ -38,12 +39,12 @@ class ProfileDialogs {
               TextField(
                 controller: feedbackController,
                 maxLines: 4,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: colorScheme.onSurface),
                 decoration: InputDecoration(
                   hintText: 'Share your feedback...',
-                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                  hintStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.5)),
                   filled: true,
-                  fillColor: const Color(0xFF1E1E1E),
+                  fillColor: colorScheme.surfaceContainerHighest,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -58,7 +59,7 @@ class ProfileDialogs {
               child: Text(
                 'Cancel',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.6),
+                  color: colorScheme.onSurface.withOpacity(0.6),
                 ),
               ),
             ),            TextButton(
@@ -82,26 +83,27 @@ class ProfileDialogs {
   }
 
   static void showDonateDialog(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: const Color(0xFF2A2A2A),
+          backgroundColor: colorScheme.surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          title: const Row(
+          title: Row(
             children: [
               Icon(
                 Icons.favorite,
                 color: Colors.red,
                 size: 28,
               ),
-              SizedBox(width: 12),
+              const SizedBox(width: 12),
               Text(
                 'Support Pottify',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: colorScheme.onSurface,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -114,7 +116,7 @@ class ProfileDialogs {
               Text(
                 'Love using Pottify? Your support helps us continue developing new features and keeping the app free for everyone.',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.8),
+                  color: colorScheme.onSurface.withOpacity(0.8),
                   fontSize: 14,
                 ),
               ),
@@ -122,7 +124,7 @@ class ProfileDialogs {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E1E1E),
+                  color: colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -155,7 +157,7 @@ class ProfileDialogs {
               child: Text(
                 'Maybe Later',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.6),
+                  color: colorScheme.onSurface.withOpacity(0.6),
                 ),
               ),
             ),
@@ -202,18 +204,19 @@ class ProfileDialogs {
   }
 
   static void showAboutDialog(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: const Color(0xFF2A2A2A),
+          backgroundColor: colorScheme.surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          title: const Text(
+          title: Text(
             'About Pottify',
             style: TextStyle(
-              color: Colors.white,
+              color: colorScheme.onSurface,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -224,7 +227,7 @@ class ProfileDialogs {
               Text(
                 'Version 1.0.0',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.8),
+                  color: colorScheme.onSurface.withOpacity(0.8),
                   fontSize: 16,
                 ),
               ),
@@ -232,7 +235,7 @@ class ProfileDialogs {
               Text(
                 'Your personal music streaming companion.',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.6),
+                  color: colorScheme.onSurface.withOpacity(0.6),
                   fontSize: 14,
                 ),
               ),
@@ -240,7 +243,7 @@ class ProfileDialogs {
               Text(
                 '© 2024 Pottify. All rights reserved.',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.4),
+                  color: colorScheme.onSurface.withOpacity(0.4),
                   fontSize: 12,
                 ),
               ),
@@ -269,7 +272,7 @@ class ProfileDialogs {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: colorScheme.surfaceContainerHighest,
+          backgroundColor: colorScheme.surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
@@ -292,7 +295,7 @@ class ProfileDialogs {
               child: Text(
                 'Cancel',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.6),
+                  color: colorScheme.onSurface.withOpacity(0.6),
                 ),
               ),
             ),            TextButton(
