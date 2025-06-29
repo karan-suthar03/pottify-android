@@ -86,7 +86,6 @@ class _SearchBarState extends State<SearchBar> {
           ),
         ),
         textInputAction: TextInputAction.search,
-        onEditingComplete: _onSearch,
       ),
     );
   }
