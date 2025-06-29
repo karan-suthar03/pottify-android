@@ -29,15 +29,26 @@ class MusicPlayerService extends ChangeNotifier {
   void setSong(Song song) {
     _currentSong = song;
     _isLoading = true;
+    _isPlaying = false;
+    _progress = Duration.zero;
+    _duration = Duration.zero;
     notifyListeners();
     setUpAudioPlayer(song);
   }
 
-  void setUpAudioPlayer(Song song) async{
+  void setUpAudioPlayer(Song song) async {
+    // Reset audio player state
+    _audioPlayer.stop();
+    _audioPlayer.pause();
+    
+    // Set loading to true when starting to load new song
+    setLoading(true);
+
     ApiService apiService = serviceLocator.get<ApiService>()!;
     apiService.fetchMp3Url(song.id).then((mp3Url) {
       if (mp3Url == null) {
-        setLoading(true);
+        setLoading(false);
+        // Handle error case - maybe show a message to user
       } else {
         _audioPlayer.load(mp3Url);
         _audioPlayer.stateStream.listen((state) {
@@ -51,6 +62,9 @@ class MusicPlayerService extends ChangeNotifier {
           setDuration(duration ?? Duration.zero);
         });
       }
+    }).catchError((error) {
+      setLoading(false);
+      // Handle error case
     });
   }
 

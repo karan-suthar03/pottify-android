@@ -20,4 +20,8 @@ class AudioPlaybackService {
   Stream<Duration> get positionStream => _player.positionStream;
 
   void dispose() => _player.dispose();
+
+  void stop() {
+    _player.stop();
+  }
 }
