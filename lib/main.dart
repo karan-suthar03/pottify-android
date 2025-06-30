@@ -1,11 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 import 'services/service_locator.dart';
 import 'services/auth_service.dart';
+import 'services/audio_session_config.dart';
 import 'pages/login_page.dart';
 import 'pages/main_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize background audio service
+  await JustAudioBackground.init(
+    androidNotificationChannelId: 'com.example.app.channel.audio',
+    androidNotificationChannelName: 'Pottify audio playback',
+    androidNotificationOngoing: true,
+    androidShowNotificationBadge: true,
+    preloadArtwork: true,
+  );
+  
+  // Configure audio session for background playback
+  await AudioSessionConfig.configure();
   
   // Initialize services (excluding audio service)
   await serviceLocator.initialize();

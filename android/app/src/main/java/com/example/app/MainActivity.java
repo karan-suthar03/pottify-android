@@ -1,7 +1,7 @@
 package com.example.app;
 
-import io.flutter.embedding.android.FlutterActivity;
+import com.ryanheise.audioservice.AudioServiceActivity;
 
-public class MainActivity extends FlutterActivity {
-    // All audio is now handled in Dart with just_audio. No native code needed.
+public class MainActivity extends AudioServiceActivity {
+    // No additional configuration needed
 }
