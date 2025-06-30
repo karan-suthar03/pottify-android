@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../models/song.dart';
 import '../services/music_player_service.dart';
 
 class FloatingMusicPlayer extends StatefulWidget {

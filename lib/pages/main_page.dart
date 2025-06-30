@@ -1,4 +1,3 @@
-import 'package:app/models/song.dart';
 import 'package:app/widgets/floating_music_player.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
