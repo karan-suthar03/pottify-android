@@ -11,7 +11,7 @@ void main() async {
   
   // Initialize background audio service
   await JustAudioBackground.init(
-    androidNotificationChannelId: 'com.example.app.channel.audio',
+    androidNotificationChannelId: 'com.example.app.channel.audio', 
     androidNotificationChannelName: 'Pottify audio playback',
     androidNotificationOngoing: true,
     androidShowNotificationBadge: true,
